@@ -1,4 +1,4 @@
-report yenj.
+report zalv.
 
 class class_report definition .
 
@@ -124,10 +124,9 @@ class class_report implementation .
 
     data:
       salv_table type ref to cl_salv_table,
-*      events  type ref to cl_salv_events_table,
+      columns    type ref to cl_salv_columns_table,
       display    type ref to cl_salv_display_settings.
-*      column  type ref to cl_salv_column_list,
-*      columns type ref to cl_salv_columns_table.
+
 
     if ( lines( out_tab ) eq 0 ) .
     else .
@@ -143,6 +142,12 @@ class class_report implementation .
               t_table      = out_tab
           ) .
 
+*         Otimizar largura da columa
+          columns = salv_table->get_columns( ) .
+          if ( columns is bound ) .
+            columns->set_optimize( cl_salv_display_settings=>true ).
+          endif .
+
 *         Usando Status
           salv_table->set_screen_status(
             pfstatus      = 'STANDARD_FULLSCREEN'
@@ -153,8 +158,9 @@ class class_report implementation .
 
 *         Layout de Zebra
           display = salv_table->get_display_settings( ) .
-          display->set_striped_pattern( cl_salv_display_settings=>true ) .
-
+          if ( display is bound ) .
+            display->set_striped_pattern( cl_salv_display_settings=>true ) .
+          endif .
 
           salv_table->display( ).
 
@@ -173,3 +179,56 @@ class class_report implementation .
 
 
 endclass .
+
+* Evento para chamada dos metodos
+initialization .
+
+
+  data:
+    filtro     type class_report=>range_bp_id,
+    alv_report type ref to class_report,
+    bpa_table  type class_report=>tab_bpa,
+    ad_table   type class_report=>tab_ad,
+    out_table  type class_report=>tab_out.
+
+* Essa opcao pode ser substituida por um parametro de selecao
+  filtro =
+    value #(
+     ( sign = 'I' option = 'EQ' low = '0100000000' )
+     ( sign = 'I' option = 'EQ' low = '0100000001' )
+     ( sign = 'I' option = 'EQ' low = '0100000002' )
+     ( sign = 'I' option = 'EQ' low = '0100000003' )
+     ( sign = 'I' option = 'EQ' low = '0100000004' )
+     ( sign = 'I' option = 'EQ' low = '0100000005' )
+    ) .
+
+
+* Criando objeto
+  alv_report = new class_report( ) .
+
+* Verificando se foi criado o objeto
+  if ( alv_report is bound ) .
+
+    alv_report->buscar_dados(
+      exporting
+        bp_id   = filtro
+      changing
+        bpa_tab = bpa_table
+        ad_tab  = ad_table
+    ).
+
+    alv_report->processar_dados(
+      exporting
+        bpa_tab = bpa_table
+        ad_tab  = ad_table
+      changing
+        out_tab = out_table
+    ).
+
+    alv_report->exibir_informacoes(
+      changing
+        out_tab = out_table
+    ).
+
+  endif .
+  
