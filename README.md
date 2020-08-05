@@ -6,6 +6,8 @@ Esta implementação tem objetivo de codificar em _três passos_ um relatório u
 ## Necessidade ##
 ~~Escrever um código que será postado no linkedin ao invés de escrever aqui e postar o link~~ Codificar um relatório de maneira simples e direta focando 3 principais passos: busca, processamento e exibição.
 
+(Link para post)[https://www.linkedin.com/pulse/sobre-estrutura-de-relat%C3%B3rio-alv-edmilson-nascimento-de-jesus/]
+
 ## Tecnologia adotada ##
 ABAP usando classe `cl_salv_table`. 
 
