@@ -1,4 +1,4 @@
-report zalv.
+report zalv .
 
 class class_report definition .
 
@@ -20,7 +20,7 @@ class class_report definition .
       tab_out     type table of ty_out,
       range_bp_id type range of snwd_bpa-bp_id,
       tab_bpa     type table of snwd_bpa, " Address Table
-      tab_ad      type table of snwd_ad . " Business Partners
+      tab_ad      type table of snwd_ad.  " Business Partners
 
     methods buscar_dados
       importing
