@@ -118,7 +118,7 @@ class class_report implementation .
     endif .
 
   endmethod .
-
+  
 
   method exibir_informacoes .
 
@@ -173,7 +173,6 @@ class class_report implementation .
       endtry.
 
     endif .
-
 
   endmethod .
 
