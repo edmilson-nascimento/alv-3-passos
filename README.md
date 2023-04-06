@@ -11,7 +11,19 @@ Esta implementação tem objetivo de codificar em _três passos_ um relatório u
 ## Tecnologia adotada ##
 ABAP usando classe `cl_salv_table`. 
 
+
 ## Solução ##
 O relatório usa dados fictícios que podem ser gerados através do TCODE `SEPM_DG`. Alguns dos trechos de códigos *não obedecem melhores práticas* pois a intenção é apenas usar 3 "responsabilidades". 
+
+## Fluxo do projeto ##
+~~Para usar um grafico Mermaid~~ Para melhor entendimento do processo, segue abaixo fluxo .
+```mermaid
+flowchart TD
+    Start((start)) --> SAPData[(Buscar dados)]
+    SAPData --> SAPProcess(Processar dados)
+    SAPProcess --> SAPInfo(Exibir Informações)
+    SAPInfo --> FinishNew((Finish))
+```
+
 
 **Esse código é aberto, sujeito a alterações ~~a hora que me der na telha~~ assim que houver uma necessidade que trará ganho didático ao conteúdo e deixe o algoritmo com melhor leitura e compreensão.**
