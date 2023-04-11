@@ -22,7 +22,7 @@ flowchart TD
     Start((start)) --> SAPData[(Buscar dados)]
     SAPData --> SAPProcess(Processar dados)
     SAPProcess --> SAPInfo(Exibir Informações)
-    SAPInfo --> FinishNew((Finish))
+    SAPInfo --> FinishNew((( )))
 ```
 
 
