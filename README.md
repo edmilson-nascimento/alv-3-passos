@@ -25,5 +25,4 @@ flowchart TD
     SAPInfo --> FinishNew((( )))
 ```
 
-
 **Esse código é aberto, sujeito a alterações ~~a hora que me der na telha~~ assim que houver uma necessidade que trará ganho didático ao conteúdo e deixe o algoritmo com melhor leitura e compreensão.**
