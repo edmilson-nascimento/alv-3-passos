@@ -155,7 +155,6 @@ class class_report implementation .
             set_functions = salv_table->c_functions_all
           ).
 
-
 *         Layout de Zebra
           display = salv_table->get_display_settings( ) .
           if ( display is bound ) .
