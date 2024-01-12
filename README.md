@@ -1,6 +1,9 @@
 # 3 passos para um ALV Report #
 
-[![N|Solid](https://wiki.scn.sap.com/wiki/download/attachments/1710/ABAP%20Development.png?version=1&modificationDate=1446673897000&api=v2)](https://www.sap.com/brazil/developer.html)
+![Static Badge](https://img.shields.io/badge/development-abap-blue)
+![GitHub commit activity (branch)](https://img.shields.io/github/commit-activity/t/edmilson-nascimento/abap-7.4)
+
+
 Esta implementação tem objetivo de codificar em _três passos_ um relatório utilizando ALV Report. Este tem como objetivo ser simples e direto.
 
 ## Necessidade ##
