@@ -1,7 +1,7 @@
 # 3 passos para um ALV Report #
 
 ![Static Badge](https://img.shields.io/badge/development-abap-blue)
-![GitHub commit activity (branch)](https://img.shields.io/github/commit-activity/t/edmilson-nascimento/abap-7.4)
+![GitHub commit activity (branch)](https://img.shields.io/github/commit-activity/t/edmilson-nascimento/alv-3-passos)
 
 
 Esta implementação tem objetivo de codificar em _três passos_ um relatório utilizando ALV Report. Este tem como objetivo ser simples e direto.
