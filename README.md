@@ -13,7 +13,7 @@ Esta implementação tem objetivo de codificar em _três passos_ um relatório u
 [Link para post](https://www.linkedin.com/pulse/sobre-estrutura-de-relat%C3%B3rio-alv-edmilson-nascimento-de-jesus/)
 
 ## Tecnologia adotada ##
-ABAP usando classe `cl_salv_table`. 
+ABAP usando classe `cl_salv_table` para exibição de dados. 
 
 
 ## Solução ##
