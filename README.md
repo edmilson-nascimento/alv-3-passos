@@ -1,4 +1,4 @@
-# 3 passos para um ALV Report #
+# Três passos para um ALV Report #
 
 ![Static Badge](https://img.shields.io/badge/development-abap-blue)
 ![GitHub commit activity (branch)](https://img.shields.io/github/commit-activity/t/edmilson-nascimento/alv-3-passos)
@@ -17,7 +17,7 @@ ABAP usando classe `cl_salv_table` para exibição de dados.
 
 
 ## Solução ##
-O relatório usa dados fictícios que podem ser gerados através do TCODE `SEPM_DG`. Alguns dos trechos de códigos *não obedecem melhores práticas* pois a intenção é apenas usar 3 "responsabilidades". 
+O relatório usa dados fictícios que podem ser gerados através do TCODE `SEPM_DG`. Alguns dos trechos de códigos *não obedecem melhores práticas* pois a intenção é **usar apenas três "responsabilidades"**. 
 
 ## Fluxo do projeto ##
 ~~Para usar um grafico Mermaid~~ Para melhor entendimento do processo, segue abaixo fluxo .
