@@ -1,6 +1,5 @@
 
-REPORT ytest .
-
+REPORT zmodel_alv.
 
 CLASS class_report DEFINITION .
 
@@ -51,35 +50,32 @@ ENDCLASS .
 
 CLASS class_report IMPLEMENTATION .
 
-  METHOD buscar_dados .
+  METHOD buscar_dados.
 
     REFRESH:
-      bpa_tab, ad_tab .
+      bpa_tab, ad_tab.
 
-    IF ( lines( bp_id ) EQ 0 ) .
-    ELSE .
+    " Retorna quantidade de linhs de uma tabela interna
+    DATA(lv_quantidade_de_lines) = lines( bp_id ).
 
-      SELECT *
-        INTO TABLE bpa_tab
-        FROM snwd_bpa
-       WHERE bp_id IN bp_id .
+    " IF ( lines( bp_id ) = 0 ).
+    IF ( lv_quantidade_de_lines = 0 ).
+      RETURN.
+    ENDIF.
 
-      IF ( sy-subrc EQ 0 ) .
+    SELECT * INTO TABLE bpa_tab
+      FROM snwd_bpa
+      WHERE bp_id IN bp_id.
+    IF ( sy-subrc <> 0 ).
+      RETURN.
+    ENDIF.
 
-        SELECT *
-          INTO TABLE ad_tab
-          FROM snwd_ad
-           FOR ALL ENTRIES IN bpa_tab
-         WHERE node_key EQ bpa_tab-address_guid .
+    SELECT * INTO TABLE ad_tab
+      FROM snwd_ad
+      FOR ALL ENTRIES IN bpa_tab
+      WHERE node_key = bpa_tab-address_guid.
 
-        IF ( sy-subrc EQ 0 ) .
-        ENDIF .
-
-      ENDIF .
-
-    ENDIF .
-
-  ENDMETHOD .
+  ENDMETHOD.
 
 
   METHOD processar_dados .
@@ -122,7 +118,7 @@ CLASS class_report IMPLEMENTATION .
   ENDMETHOD .
 
 
-  METHOD exibir_informacoes .
+  METHOD exibir_informacoes.
 
     DATA:
       salv_table TYPE REF TO cl_salv_table,
@@ -130,105 +126,95 @@ CLASS class_report IMPLEMENTATION .
       display    TYPE REF TO cl_salv_display_settings.
 
 
-    IF ( lines( out_tab ) EQ 0 ) .
-      RETURN .
-    ENDIF .
+    IF ( lines( out_tab ) = 0 ).
+    ELSE.
 
-    TRY .
+      TRY.
 
-        cl_salv_table=>factory(
-*             exporting
-*             list_display = if_salv_c_bool_sap=>true
-          IMPORTING
-            r_salv_table = salv_table
-          CHANGING
-            t_table      = out_tab
-        ) .
+          cl_salv_table=>factory( IMPORTING r_salv_table = salv_table
+                                  CHANGING  t_table      = out_tab ).
 
-*         Otimizar largura da columa
-        columns = salv_table->get_columns( ) .
-        IF ( columns IS BOUND ) .
-          columns->set_optimize( cl_salv_display_settings=>true ).
-        ENDIF .
+          " Otimizar largura da columa
+          columns = salv_table->get_columns( ).
+          IF ( columns IS BOUND ).
+            columns->set_optimize( cl_salv_display_settings=>true ).
+          ENDIF.
 
-*          data(column) =
+          " Usando Status
+          salv_table->set_screen_status( pfstatus      = 'STANDARD_FULLSCREEN'
+                                         report        = 'SAPLKKBL'
+                                         set_functions = salv_table->c_functions_all ).
 
-*         Usando Status
-        salv_table->set_screen_status(
-          pfstatus      = 'STANDARD_FULLSCREEN'
-          report        = 'SAPLKKBL'
-          set_functions = salv_table->c_functions_all
-        ).
+          " Layout de Zebra
+          display = salv_table->get_display_settings( ).
+          IF ( display IS BOUND ).
+            display->set_striped_pattern( cl_salv_display_settings=>true ).
+          ENDIF.
 
-*         Layout de Zebra
-        display = salv_table->get_display_settings( ) .
-        IF ( display IS BOUND ) .
-          display->set_striped_pattern( cl_salv_display_settings=>true ) .
-        ENDIF .
+          salv_table->display( ).
 
-        salv_table->display( ).
+        CATCH cx_salv_msg.
+        CATCH cx_salv_not_found.
+        CATCH cx_salv_existing.
+        CATCH cx_salv_data_error.
+        CATCH cx_salv_object_not_found.
 
-      CATCH cx_salv_msg .
-      CATCH cx_salv_not_found .
-      CATCH cx_salv_existing .
-      CATCH cx_salv_data_error .
-      CATCH cx_salv_object_not_found .
+      ENDTRY.
 
-    ENDTRY.
+    ENDIF.
 
-  ENDMETHOD .
+  ENDMETHOD.
 
 
 ENDCLASS .
 
-* Evento para chamada dos metodos
-INITIALIZATION .
+" Declaracoes globais
+DATA:
+  filtro            TYPE class_report=>range_bp_id,
+  alv_global_object TYPE REF TO class_report,
+  bpa_table         TYPE class_report=>tab_bpa,
+  ad_table          TYPE class_report=>tab_ad,
+  out_table         TYPE class_report=>tab_out.
 
+INITIALIZATION.
+  " antes de aparecer os filtros
+  " informar uma data padrao por exemplo
 
-  DATA:
-    filtro     TYPE class_report=>range_bp_id,
-    alv_report TYPE REF TO class_report,
-    bpa_table  TYPE class_report=>tab_bpa,
-    ad_table   TYPE class_report=>tab_ad,
-    out_table  TYPE class_report=>tab_out.
-
-* Essa opcao pode ser substituida por um parametro de selecao
+  " Essa opcao pode ser substituida por um parametro de selecao
   filtro =
-    VALUE #(
-     ( sign = 'I' option = 'EQ' low = '0100000000' )
-     ( sign = 'I' option = 'EQ' low = '0100000001' )
-     ( sign = 'I' option = 'EQ' low = '0100000002' )
-     ( sign = 'I' option = 'EQ' low = '0100000003' )
-     ( sign = 'I' option = 'EQ' low = '0100000004' )
-     ( sign = 'I' option = 'EQ' low = '0100000005' )
-    ) .
+    VALUE #( sign   = 'I'
+             option = 'EQ'
+             ( low = '0100000000' )
+             ( low = '0100000001' )
+             ( low = '0100000002' )
+             ( low = '0100000003' )
+             ( low = '0100000004' )
+             ( low = '0100000005' ) ).
 
 
-* Criando objeto
-  alv_report = NEW class_report( ) .
+START-OF-SELECTION.
+  " clicou para executar o relatorio (F8)
+  " depois de informar os filtros
 
-* Verificando se foi criado o objeto
-  IF ( alv_report IS BOUND ) .
+  " Passo para se buscar os dados
 
-    alv_report->buscar_dados(
-      EXPORTING
-        bp_id   = filtro
-      CHANGING
-        bpa_tab = bpa_table
-        ad_tab  = ad_table
-    ).
+  " Criando objeto
+  alv_global_object = NEW class_report( ).
 
-    alv_report->processar_dados(
-      EXPORTING
-        bpa_tab = bpa_table
-        ad_tab  = ad_table
-      CHANGING
-        out_tab = out_table
-    ).
+  " Verificando se foi criado o objeto
+  IF ( alv_global_object IS BOUND ).
 
-    alv_report->exibir_informacoes(
-      CHANGING
-        out_tab = out_table
-    ).
+    alv_global_object->buscar_dados( EXPORTING bp_id   = filtro
+                                     CHANGING  bpa_tab = bpa_table
+                                               ad_tab  = ad_table ).
 
-  ENDIF .
+    alv_global_object->processar_dados( EXPORTING bpa_tab = bpa_table
+                                                  ad_tab  = ad_table
+                                        CHANGING  out_tab = out_table ).
+  ENDIF.
+
+END-OF-SELECTION.
+  " apos o evento START-
+  " ainda antes de exibir o ALV
+
+  alv_global_object->exibir_informacoes( CHANGING out_tab = out_table ).
