@@ -1,4 +1,3 @@
-
 REPORT zmodel_alv.
 
 CLASS class_report DEFINITION .
