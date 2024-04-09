@@ -1,4 +1,22 @@
 REPORT zmodel_alv.
+TABLES: ekko, ekpo, COBL.
+
+selection-screen begin of block blc01 with frame title text-001.
+    select-options:
+        so_ebeln for ekko-ebeln,
+        so_bedat for ekko-bedat,
+        so_pspnr for COBL-PS_POSID.
+    selection-screen: uline.
+
+selection-screen end of block blc01.
+
+TYPES:
+      BEGIN OF ty_ekko_range,
+        ebeln TYPE ekko-ebeln,
+      END OF ty_ekko_range.
+
+    TYPES:
+      tt_range  TYPE TABLE OF ty_ekko_range.
 
 CLASS class_report DEFINITION .
 
@@ -6,33 +24,43 @@ CLASS class_report DEFINITION .
 
     TYPES:
       BEGIN OF ty_out,
-        bp_id         TYPE snwd_bpa-bp_id,
-        company_name  TYPE snwd_bpa-company_name,
-        currency_code TYPE snwd_bpa-currency_code,
-        web_address   TYPE snwd_bpa-web_address,
-        email_address TYPE snwd_bpa-email_address,
-        country       TYPE snwd_ad-country,
-        city          TYPE snwd_ad-city,
-        postal_code   TYPE snwd_ad-postal_code,
-        street        TYPE snwd_ad-street,
+        mandt         type ekko-mandt,
+        ebeln         type ekko-ebeln, " Doc.compras
+        bukrs         type ekko-bukrs, " Empresa
+        bsart         type ekko-bsart, " Tipo de Doc.
+        bedat         type ekko-bedat, " Data Doc.
+        lifnr         type ekko-lifnr, " Id Fornecedor
+        ebelp         type ekpo-ebelp, " Item pedido
+        matnr         type ekpo-matnr, " Id Material
+        txz01         type ekpo-txz01, " Texto Breve
+        menge         type ekpo-menge, " Qtd.do pedido
+        meins         type ekpo-meins, " UM pedido
+        bprme         type ekpo-bprme, " Unid. Preço Pedido
+        netwr         type ekpo-netwr, " Valor Liq.
+        brtwr         type ekpo-brtwr, " Valor Bruto
+        loekz         type ekpo-loekz, " Cód. eliminação
+        pspnr         type COBL-PS_POSID, " Elemento PEP
+
       END OF ty_out,
 
-      tab_out     TYPE TABLE OF ty_out,
-      range_bp_id TYPE RANGE OF snwd_bpa-bp_id,
-      tab_bpa     TYPE TABLE OF snwd_bpa, " Address Table
-      tab_ad      TYPE TABLE OF snwd_ad.  " Business Partners
+      tab_out        TYPE TABLE OF ty_out,
+      range_ebeln_id TYPE RANGE OF ekko-ebeln,
+      tab_ekko       TYPE TABLE OF ekko, " Cabeçalho do documento de compra
+      tab_ekpo       TYPE TABLE OF ekpo. " Item do documento de compra
+
+
 
     METHODS buscar_dados
       IMPORTING
-        !bp_id   TYPE class_report=>range_bp_id
+        !ekko_id TYPE class_report=>range_ebeln_id
       CHANGING
-        !bpa_tab TYPE class_report=>tab_bpa
-        !ad_tab  TYPE class_report=>tab_ad .
+        !ekko_tab TYPE  class_report=>tab_ekko
+        !ekpo_tab TYPE  class_report=>tab_ekpo .
 
     METHODS processar_dados
       IMPORTING
-        !bpa_tab TYPE class_report=>tab_bpa
-        !ad_tab  TYPE class_report=>tab_ad
+        !ekko_tab TYPE  class_report=>tab_ekko
+        !ekpo_tab TYPE  class_report=>tab_ekpo
       CHANGING
         !out_tab TYPE class_report=>tab_out .
 
@@ -52,27 +80,33 @@ CLASS class_report IMPLEMENTATION .
   METHOD buscar_dados.
 
     REFRESH:
-      bpa_tab, ad_tab.
+      ekko_tab, ekpo_tab.
 
     " Retorna quantidade de linhs de uma tabela interna
-    DATA(lv_quantidade_de_lines) = lines( bp_id ).
+    DATA(lv_quantidade_de_lines) = lines( ekko_id ).
 
     " IF ( lines( bp_id ) = 0 ).
     IF ( lv_quantidade_de_lines = 0 ).
       RETURN.
     ENDIF.
 
-    SELECT * INTO TABLE bpa_tab
-      FROM snwd_bpa
-      WHERE bp_id IN bp_id.
+    SELECT * INTO TABLE ekko_tab
+      FROM ekko
+      WHERE ebeln IN so_ebeln.
+
     IF ( sy-subrc <> 0 ).
       RETURN.
     ENDIF.
+" filtros where
+"so_ebeln - somente este está implementado
+"so_bedat
+"so_pspnr
 
-    SELECT * INTO TABLE ad_tab
-      FROM snwd_ad
-      FOR ALL ENTRIES IN bpa_tab
-      WHERE node_key = bpa_tab-address_guid.
+    SELECT * INTO TABLE ekpo_tab
+      FROM ekpo
+      "FOR ALL ENTRIES IN ekpo_tab
+      "WHERE ebeln = ekko_tab-ebeln.
+      WHERE ebeln in so_ebeln.
 
   ENDMETHOD.
 
@@ -84,30 +118,36 @@ CLASS class_report IMPLEMENTATION .
 
     REFRESH out_tab .
 
-    IF ( lines( bpa_tab ) GT 0 ) AND
-       ( lines( ad_tab )  GT 0 ) .
+    IF ( lines( ekko_tab ) GT 0 ) AND
+       ( lines( ekpo_tab ) GT 0 ) .
 
-      LOOP AT bpa_tab INTO DATA(bpa_line) .
+      LOOP AT ekpo_tab INTO DATA(ekpo_line) .
 
-        out_line-bp_id         = bpa_line-bp_id .
-        out_line-company_name  = bpa_line-company_name .
-        out_line-currency_code = bpa_line-currency_code .
-        out_line-web_address   = bpa_line-web_address .
-        out_line-email_address = bpa_line-email_address .
+        out_line-ebelp = ekpo_line-ebelp.
+        out_line-matnr = ekpo_line-matnr.
+        out_line-txz01 = ekpo_line-txz01.
+        out_line-menge = ekpo_line-menge.
+        out_line-meins = ekpo_line-meins.
+        out_line-bprme = ekpo_line-bprme.
+        out_line-netwr = ekpo_line-netwr.
+        out_line-brtwr = ekpo_line-brtwr.
+        out_line-loekz = ekpo_line-loekz.
 
-        READ TABLE ad_tab INTO DATA(ad_line)
-          WITH KEY node_key = bpa_line-address_guid .
+
+
+        READ TABLE ekko_tab INTO DATA(ekko_line)
+          WITH KEY ebeln = ekpo_line-ebeln .
 
         IF ( sy-subrc EQ 0 ) .
+            out_line-mandt = ekko_line-mandt.
+            out_line-ebeln = ekko_line-ebeln.
+            out_line-bukrs = ekko_line-bukrs.
+            out_line-bsart = ekko_line-bsart.
+            out_line-bedat = ekko_line-bedat.
+            out_line-lifnr = ekko_line-lifnr.
 
-          out_line-country     = ad_line-country .
-          out_line-city        = ad_line-city .
-          out_line-postal_code = ad_line-postal_code .
-          out_line-street      = ad_line-street .
-
-          APPEND out_line TO out_tab .
-          CLEAR  out_line .
-
+            APPEND out_line TO out_tab .
+            CLEAR  out_line .
         ENDIF .
 
       ENDLOOP .
@@ -169,11 +209,13 @@ ENDCLASS .
 
 " Declaracoes globais
 DATA:
-  filtro            TYPE class_report=>range_bp_id,
+  filtro            TYPE class_report=>range_ebeln_id,
   alv_global_object TYPE REF TO class_report,
-  bpa_table         TYPE class_report=>tab_bpa,
-  ad_table          TYPE class_report=>tab_ad,
+  ekko_table         TYPE class_report=>tab_ekko,
+  ekpo_table          TYPE class_report=>tab_ekpo,
   out_table         TYPE class_report=>tab_out.
+
+
 
 INITIALIZATION.
   " antes de aparecer os filtros
@@ -183,12 +225,11 @@ INITIALIZATION.
   filtro =
     VALUE #( sign   = 'I'
              option = 'EQ'
-             ( low = '0100000000' )
-             ( low = '0100000001' )
-             ( low = '0100000002' )
-             ( low = '0100000003' )
-             ( low = '0100000004' )
-             ( low = '0100000005' ) ).
+              ( low = '4500257904' )
+              ( low = '4500257905' )
+              ( low = '4500257906' )
+              ( low = '4500257907' )
+              ( low = '4500257908' ) ).
 
 
 START-OF-SELECTION.
@@ -203,13 +244,13 @@ START-OF-SELECTION.
   " Verificando se foi criado o objeto
   IF ( alv_global_object IS BOUND ).
 
-    alv_global_object->buscar_dados( EXPORTING bp_id   = filtro
-                                     CHANGING  bpa_tab = bpa_table
-                                               ad_tab  = ad_table ).
+    alv_global_object->buscar_dados( EXPORTING ekko_id  = filtro
+                                     CHANGING  ekko_tab = ekko_table
+                                               ekpo_tab = ekpo_table ).
 
-    alv_global_object->processar_dados( EXPORTING bpa_tab = bpa_table
-                                                  ad_tab  = ad_table
-                                        CHANGING  out_tab = out_table ).
+    alv_global_object->processar_dados( EXPORTING ekko_tab = ekko_table
+                                                  ekpo_tab = ekpo_table
+                                        CHANGING  out_tab  = out_table ).
   ENDIF.
 
 END-OF-SELECTION.
