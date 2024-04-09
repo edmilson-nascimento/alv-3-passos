@@ -213,10 +213,9 @@ selection-screen end of block blc01.
 DATA:
   filtro            TYPE class_report=>range_ebeln_id,
   alv_global_object TYPE REF TO class_report,
-  ekko_table         TYPE class_report=>tab_ekko,
-  ekpo_table          TYPE class_report=>tab_ekpo,
+  ekko_table        TYPE class_report=>tab_ekko,
+  ekpo_table        TYPE class_report=>tab_ekpo,
   out_table         TYPE class_report=>tab_out.
-
 
 
 INITIALIZATION.
