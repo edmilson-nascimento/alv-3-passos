@@ -1,11 +1,11 @@
 REPORT zmodel_alv.
-TABLES: ekko, ekpo, COBL.
+TABLES: ekko, ekpo, ekkn, KONP.
 
 selection-screen begin of block blc01 with frame title text-001.
     select-options:
         so_ebeln for ekko-ebeln,
         so_bedat for ekko-bedat,
-        so_pspnr for COBL-PS_POSID.
+        so_pspnr for ekkn-PS_PSP_PNR.
     selection-screen: uline.
 
 selection-screen end of block blc01.
@@ -39,28 +39,27 @@ CLASS class_report DEFINITION .
         netwr         type ekpo-netwr, " Valor Liq.
         brtwr         type ekpo-brtwr, " Valor Bruto
         loekz         type ekpo-loekz, " Cód. eliminação
-        pspnr         type COBL-PS_POSID, " Elemento PEP
+        pspnr         type ekkn-PS_PSP_PNR, " Elemento PEP
 
       END OF ty_out,
 
-      tab_out        TYPE TABLE OF ty_out,
-      range_ebeln_id TYPE RANGE OF ekko-ebeln,
-      tab_ekko       TYPE TABLE OF ekko, " Cabeçalho do documento de compra
-      tab_ekpo       TYPE TABLE OF ekpo. " Item do documento de compra
-
-
+    tab_out TYPE TABLE OF ty_out.
 
     METHODS buscar_dados
       IMPORTING
-        !ekko_id TYPE class_report=>range_ebeln_id
+        !ekko_id TYPE FIP_T_EBELN_RANGE
+        !ekko_bedat type WRF_PBAS_BEDAT_RTTY
+        !ekkn_pspnr type HRPP_SEL_PS_PSP_PNR
       CHANGING
-        !ekko_tab TYPE  class_report=>tab_ekko
-        !ekpo_tab TYPE  class_report=>tab_ekpo .
+        !ekko_tab TYPE me_ekko
+        !ekpo_tab TYPE ME_EKPO
+        !ekkn_tab type ME_EKKN.
 
     METHODS processar_dados
       IMPORTING
-        !ekko_tab TYPE  class_report=>tab_ekko
-        !ekpo_tab TYPE  class_report=>tab_ekpo
+        !ekko_tab TYPE me_ekko
+        !ekpo_tab TYPE ME_EKPO
+        !ekkn_tab type ME_EKKN
       CHANGING
         !out_tab TYPE class_report=>tab_out .
 
@@ -80,7 +79,7 @@ CLASS class_report IMPLEMENTATION .
   METHOD buscar_dados.
 
     REFRESH:
-      ekko_tab, ekpo_tab.
+      ekko_tab, ekpo_tab, ekkn_tab.
 
     " Retorna quantidade de linhs de uma tabela interna
     DATA(lv_quantidade_de_lines) = lines( ekko_id ).
@@ -92,7 +91,8 @@ CLASS class_report IMPLEMENTATION .
 
     SELECT * INTO TABLE ekko_tab
       FROM ekko
-      WHERE ebeln IN so_ebeln.
+      WHERE ebeln IN ekko_id
+        and bedat in ekko_bedat.
 
     IF ( sy-subrc <> 0 ).
       RETURN.
@@ -104,9 +104,13 @@ CLASS class_report IMPLEMENTATION .
 
     SELECT * INTO TABLE ekpo_tab
       FROM ekpo
-      "FOR ALL ENTRIES IN ekpo_tab
-      "WHERE ebeln = ekko_tab-ebeln.
-      WHERE ebeln in so_ebeln.
+      FOR ALL ENTRIES IN ekko_tab
+      WHERE ebeln = ekko_tab-ebeln.
+
+    SELECT * INTO TABLE ekkn_tab
+      FROM ekkn
+      FOR ALL ENTRIES IN ekko_tab
+      WHERE ebeln = ekko_tab-ebeln.
 
   ENDMETHOD.
 
@@ -114,7 +118,10 @@ CLASS class_report IMPLEMENTATION .
   METHOD processar_dados .
 
     DATA:
-      out_line TYPE class_report=>ty_out .
+      out_line TYPE class_report=>ty_out,
+      W_TAX TYPE TAXCOM.
+
+    data tkomv type TABLE OF komv.
 
     REFRESH out_tab .
 
@@ -122,6 +129,7 @@ CLASS class_report IMPLEMENTATION .
        ( lines( ekpo_tab ) GT 0 ) .
 
       LOOP AT ekpo_tab INTO DATA(ekpo_line) .
+        CLEAR W_TAX.
 
         out_line-ebelp = ekpo_line-ebelp.
         out_line-matnr = ekpo_line-matnr.
@@ -132,8 +140,6 @@ CLASS class_report IMPLEMENTATION .
         out_line-netwr = ekpo_line-netwr.
         out_line-brtwr = ekpo_line-brtwr.
         out_line-loekz = ekpo_line-loekz.
-
-
 
         READ TABLE ekko_tab INTO DATA(ekko_line)
           WITH KEY ebeln = ekpo_line-ebeln .
@@ -146,8 +152,101 @@ CLASS class_report IMPLEMENTATION .
             out_line-bedat = ekko_line-bedat.
             out_line-lifnr = ekko_line-lifnr.
 
-            APPEND out_line TO out_tab .
-            CLEAR  out_line .
+            READ TABLE ekkn_tab INTO DATA(ekkn_line)
+             WITH KEY ebeln = ekpo_line-ebeln
+                       ebelp = ekpo_line-ebelp .
+
+             IF ( sy-subrc EQ 0 ) .
+               out_line-pspnr = ekkn_line-PS_PSP_PNR.
+             endif.
+
+*            -------------BUSCAR PREÇO BRUTO--------------------------*
+             W_TAX-bukrs = ekpo_line-bukrs.
+             W_TAX-budat = ekko_line-bedat.
+             W_TAX-waers = ekko_line-waers.
+             W_TAX-kposn = ekpo_line-ebelp.
+             W_TAX-mwskz = ekpo_line-mwskz.
+             W_TAX-txjcd = ekpo_line-txjcd.
+             W_TAX-ebeln = ekpo_line-ebeln.                              "N1427028
+             W_TAX-ebelp = ekpo_line-ebelp.                              "N1427028
+             W_TAX-shkzg = 'H'.
+             W_TAX-xmwst = 'X'.
+             IF ekpo_line-bstyp EQ 'F'.
+               W_TAX-wrbtr = ekpo_line-netwr.
+             ELSE.
+               W_TAX-wrbtr = ekpo_line-zwert.
+             ENDIF.
+             W_TAX-lifnr = ekko_line-lifnr.
+             W_TAX-land1 = ekko_line-lands.                              "WIA
+             W_TAX-ekorg = ekko_line-ekorg.
+*  DEPOIS VER SE NECESSITA           -- W_TAX-hwaer = t001-waers.
+             W_TAX-llief = ekko_line-llief.
+             W_TAX-bldat = ekko_line-bedat.
+             W_TAX-matnr = ekpo_line-matnr.         "HTN-Abwicklung
+             W_TAX-werks = ekpo_line-werks.
+             W_TAX-bwtar = ekpo_line-bwtar.
+             W_TAX-matkl = ekpo_line-matkl.
+             W_TAX-meins = ekpo_line-meins.
+*             - Mengen richtig fuellen ---------------------------------------------*
+             IF ekko_line-bstyp EQ 'F'.
+               W_TAX-mglme = ekpo_line-menge.
+             ELSE.
+                IF ekko_line-bstyp EQ 'K' AND ekpo_line-abmng GT 0.
+                  W_TAX-mglme = ekpo_line-abmng.
+                ELSE.
+                  W_TAX-mglme = ekpo_line-ktmng.
+                ENDIF.
+             ENDIF.
+             IF W_TAX-mglme EQ 0.  "falls keine Menge gesetzt --> auf 1 setzen
+               W_TAX-mglme = 1000.  "z.B. bestellte Banf nochmal bestellt
+             ENDIF.
+
+             W_TAX-mtart = ekpo_line-mtart.
+
+             CALL FUNCTION 'J_1BSA_COMPONENT_ACTIVE'
+               EXPORTING
+                 bukrs                = ekpo_line-bukrs
+                 component            = 'BR'
+               EXCEPTIONS
+                 component_not_active = 02.
+
+             IF sy-subrc IS INITIAL.
+               CALL FUNCTION 'J_1B_NF_PO_DISCOUNTS'
+                 EXPORTING
+                   i_kalsm = ekko_line-kalsm
+                   i_ekpo  = ekpo_line
+                 IMPORTING
+                   e_ekpo  = ekpo_line
+                 TABLES
+                   i_konv  = tkomv                                   "#EC *
+                 EXCEPTIONS
+                   OTHERS  = 1.
+
+                IF NOT ekko_line-llief IS INITIAL.
+                  w_tax-lifnr = ekko_line-llief.
+                ENDIF.
+             ENDIF.
+
+             CALL FUNCTION 'CALCULATE_TAX_ITEM'
+                EXPORTING
+                     dialog       = ' '
+                     display_only = 'X'
+                     i_taxcom     = W_tax
+                 importing
+                   E_TAXCOM       = w_tax
+                 TABLES
+                   t_xkomv        = tkomv.
+
+
+              if ekpo_line-packno IS NOT INITIAL.
+                  ekpo_line-brtwr = W_TAX-WRBTR.
+              else.
+                  ekpo_line-brtwr = W_TAX-WMWST + W_TAX-WRBTR.
+              endif.
+
+
+              APPEND out_line TO out_tab .
+              CLEAR  out_line .
         ENDIF .
 
       ENDLOOP .
@@ -209,10 +308,10 @@ ENDCLASS .
 
 " Declaracoes globais
 DATA:
-  filtro            TYPE class_report=>range_ebeln_id,
   alv_global_object TYPE REF TO class_report,
-  ekko_table         TYPE class_report=>tab_ekko,
-  ekpo_table          TYPE class_report=>tab_ekpo,
+  ekko_table        TYPE me_ekko,
+  ekpo_table        TYPE ME_EKPO,
+  ekkn_table        type me_ekkn,
   out_table         TYPE class_report=>tab_out.
 
 
@@ -220,16 +319,6 @@ DATA:
 INITIALIZATION.
   " antes de aparecer os filtros
   " informar uma data padrao por exemplo
-
-  " Essa opcao pode ser substituida por um parametro de selecao
-  filtro =
-    VALUE #( sign   = 'I'
-             option = 'EQ'
-              ( low = '4500257904' )
-              ( low = '4500257905' )
-              ( low = '4500257906' )
-              ( low = '4500257907' )
-              ( low = '4500257908' ) ).
 
 
 START-OF-SELECTION.
@@ -244,12 +333,16 @@ START-OF-SELECTION.
   " Verificando se foi criado o objeto
   IF ( alv_global_object IS BOUND ).
 
-    alv_global_object->buscar_dados( EXPORTING ekko_id  = filtro
+    alv_global_object->buscar_dados( EXPORTING ekko_id  = so_ebeln[]
+                                               ekko_bedat = so_bedat[]
+                                               ekkn_pspnr = so_pspnr[]
                                      CHANGING  ekko_tab = ekko_table
-                                               ekpo_tab = ekpo_table ).
+                                               ekpo_tab = ekpo_table
+                                               ekkn_tab = ekkn_table ).
 
     alv_global_object->processar_dados( EXPORTING ekko_tab = ekko_table
                                                   ekpo_tab = ekpo_table
+                                                  ekkn_tab = ekkn_table
                                         CHANGING  out_tab  = out_table ).
   ENDIF.
 
