@@ -50,7 +50,7 @@ Nessa rotina, vai ser feita uma busca simples que, para o nosso exemplo, trará 
     endif .
   endmethod .
   ```
-  Processar Dados
+Processar Dados
 Depois de termos os dados, vamos organizar de forma que nossa saída de relatório tenha as informações correspondentes de cada parceiro. Nesta parte, vamos organizar os dados e para isso usaremos um comando bem particular (pelo menos com esse mesmo propósito) da linguagem de programação SAP ABAP, o read table.
 
 O read table nos permite fazer um acesso a um único registro, usando termos de igualdade e retornando um registro de uma matriz (no caso do ABAP, uma Work Area de uma Internal Table).
@@ -82,9 +82,8 @@ method processar_dados .
     endif .
 ```
 
-Exibir dados
-
-Eu gosto de utilizar o método factory da classe cl_salv_table porque eu tenho um melhor acesso às funcionalidades ALV via métodos e o código fica menos verboso.
+### Exibir dados
+Eu gosto de utilizar o método factory da classe `cl_salv_table` porque eu tenho um melhor acesso às funcionalidades ALV via métodos e o código fica menos verboso.
 
 ```abap
 method exibir_informacoes .
@@ -130,11 +129,11 @@ method exibir_informacoes .
   endmethod .
 ```
 
-
-Conclusão
+## Conclusão
 Neste post, usamos poucas linhas de código para contemplar uma rotina para buscar dados, uma de organizá-los e outra para exibi-las com SAP ALV Reports.
 
 O intuito foi ter uma ideia básica de como é feita a maioria dos relatórios. Por termos um framework robusto como SAP ALV Reports, as rotinas usam os três passos básicos e as sub-rotinas necessárias (ou não) dentro de cada um deles. Claro que o código foi feito de maneira mais simples e está disponível no GitHub para melhorias/atualizações/correções, assim como a documentação do mesmo.
+
 
 Espero que, de alguma forma, este conteúdo tenha sido produtivo para alguém.
 
